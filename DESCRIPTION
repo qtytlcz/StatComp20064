@@ -1,0 +1,20 @@
+Package: StatComp20064
+Type: Package
+Title: Example functions for 'Statistical Computing' course
+Version: 1.0
+Date: 2020-12-18
+Author: 20064
+Maintainer: The package maintainer<yourself@somewhere.net>
+Description: One paragraph description of what the package does as one or more
+        full sentences.
+License: GPL (>= 2)
+LinkingTo: Rcpp
+Encoding: UTF-8
+LazyData: true
+Imports:Rcpp,bootstrap,ggplot2,DAAG,RANN,boot,energy,Ball,MASS,microbenchmark,nloptr,colorspace
+RoxygenNote: 7.1.1
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+Packaged: 2020-12-18 17:56:43 USTC;
+URL: https://github.com/qtytlcz/StatComp20064
+BugReports: https://github.com/qtytlcz/StatComp20064/issues
