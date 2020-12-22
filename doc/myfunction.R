@@ -1,4 +1,19 @@
 ## -----------------------------------------------------------------------------
+library(MASS)
+
+Simu_Multi_Norm <- function(x_len, sd = 1, pho = 0.5) {
+  V <- matrix(data = NA,
+              nrow = x_len,
+              ncol = x_len)
+  for (i in 1:x_len) {
+    for (j in 1:x_len) {
+      V[i, j] <- pho ^ abs(i - j)
+    }
+  }
+  V <- (sd ^ 2) * V
+  return(V)
+}
+
 simulation1 <- function(n=40,sigma=1,beta = c(3, 1.5, 2, 0, 0, 0, 0, 0)){
   d <- length(beta)
   x <- mvrnorm(n, mu = rep(0, d), Simu_Multi_Norm(x_len = d, sd  = 1, pho = 0.5))
@@ -92,8 +107,8 @@ scadest <- function(x, y) {
 }
 
 
-
-
+data <- simulation1(n=40,sigma=1,beta=c(3, 1.5, 2, 0, 0, 0, 0, 0))
+scadest(data$x, data$y)
 
 ## -----------------------------------------------------------------------------
 BinaryPoisson<-function(x=c(162,267,271,185,111,61,27,8,3,1)){
@@ -116,4 +131,5 @@ BinaryPoisson<-function(x=c(162,267,271,185,111,61,27,8,3,1)){
   }
   return(list(a=a,mu1=mu1,mu2=mu2))
 }
+BinaryPoisson(c(162,267,271,185,111,61,27,8,3,1))
 
