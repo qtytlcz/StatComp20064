@@ -1,0 +1,156 @@
+---
+title: "myfunction"
+author: "20064"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{myfunction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+__StatComp20064__ is a simple R package developed to learn how to correctly generate and compile R packages. Due to the needs for the course statistical computing, all of the homeworks are below. But in order to avoid running for too long we annotate some functions, which needs too much iteration. 
+ 
+Apart from homework, we also wrote two functions **scadest** and **BinaryPoisson**. 
+
+****
+## intro
+
+****
+##scadest
+
+The first one realize the smoothly clipped absolute deviation penalty algorithm, And we can use the function to realize the simulation in the paper(Jianqing Fan and Runze Li,2001). 
+
+
+The source R code for _scadest_ is as follows:
+```{r}
+simulation1 <- function(n=40,sigma=1,beta = c(3, 1.5, 2, 0, 0, 0, 0, 0)){
+  d <- length(beta)
+  x <- mvrnorm(n, mu = rep(0, d), Simu_Multi_Norm(x_len = d, sd  = 1, pho = 0.5))
+  epsilon  <-  rnorm(n, 0, sigma)
+  y  <-  x %*% beta + epsilon
+  return(list(y=y,x=x))
+}
+
+# Define the penalty derivative
+p_lambda_d<-function(theta,a,lambda){
+  l=length(theta)
+  p1=rep(0,l)
+  for(i in 1:l){
+    if((abs(theta[i])>lambda)){
+      if((a*lambda) >= abs(theta[i])){
+        p1[i]=(a*lambda - theta[i])/((a - 1)*lambda)
+      }
+      else{
+        p1[i]=0
+      }
+    }
+    else{
+      p1[i]=lambda
+    }
+  }
+  return(p1)
+}
+
+Sigmaf=function(beta,a,lambda) {
+  l=length(beta)
+  Sigmabeta=matrix(0,l,l)
+  diag(Sigmabeta)=p_lambda_d(abs(beta),a,lambda)/abs(beta)
+  return (Sigmabeta)
+}
+
+scad=function(x,y,a,lambda) {
+  n = length(y)
+  d = dim(x)[2]
+  beta0=solve(t(x)%*%x)%*%t(x)%*%y
+  betahat=beta0
+  #remove 0 in betahat
+  {
+    if(min(abs(betahat))<1e-5){
+      r=which(abs(betahat)<1e-5)
+      z=x[,-r]
+      betahat=betahat[-r]
+    }
+    else {
+      z=x
+      betahat=betahat
+    }
+  }
+  iter=0
+  while((max(abs(t(z)%*%z%*%betahat-t(z)%*%y+n*p_lambda_d(abs(betahat),a,lambda)*sign(betahat)))>0.01)&&(iter<=1000)){
+    betahat=solve(t(z)%*%z+n*Sigmaf(betahat,a,lambda))%*%t(z)%*%y
+    if(min(abs(betahat))<1e-5){
+      r=which(abs(betahat)<1e-5)
+      z=z[,-r]
+      betahat=betahat[-r]
+    }
+    iter=iter+1
+  }
+  betahate=rep(0,d)
+  for (i in 1:d){
+    for (j in 1:ncol(z)){
+      if (length(which(x[,i]==z[,j]))==n) betahate[i]=betahat[j]
+    }
+  }
+  px=z%*%solve(t(z)%*%z+n*Sigmaf(betahat,a,lambda))%*%t(z)
+  gcv=sum((y-x%*%betahate)^2)/(n*(1-sum(diag(px))/n)^2)
+  result=list(betahat=betahate,iter=iter,gcv=gcv)
+  return(result)
+}
+
+
+
+scadest <- function(x, y) {
+  as = seq(3.5, 4, 0.1)
+  lambdas = seq(0, 1, 0.1)
+  gcv1 = matrix(0, nrow = length(as), ncol = length(lambdas))
+  
+  for (i in 1:length(as)) {
+    for (j in 1:length(lambdas))
+      gcv1[i, j] = scad(x, y, as[i], lambdas[j])$gcv
+  }
+  b = which(gcv1 == gcv1[which.min(gcv1)], arr.ind = T)
+  agcv = as[b[1]]
+  lambdagcv = lambdas[b[2]]
+  beta1 = as.matrix(scad(x, y, agcv, lambdagcv)$betahat)
+  print(list(beta1))
+}
+
+
+
+
+```
+
+
+##BinaryPoisson
+
+The second one fit data with a mixed distribution of Poisson distribution using EM algorithm. This can fit a type of data more accurately, which recorded the number of occurrences of a random event in unit time.
+
+A function to use a mixed distribution of Poisson distribution with mean mu1 and Poisson distribution with mean mu1 to fit data, which is known as the number of occurrences of a random event in unit time.And a is the percentage of the first distribution.
+
+The source R code for _BinaryPoisson_ is as follows:
+```{r}
+BinaryPoisson<-function(x=c(162,267,271,185,111,61,27,8,3,1)){
+  n <- length(x)
+  d <- 0:(n-1)
+  a <- 0.4 ; mu1 <- 1 ; mu2 <-3;
+  t <- function(a,m1,m2){
+    b <- x
+    for(i in 1:n){
+      b[i] <- a*exp(-m1)*m1^(i-1)/(a*exp(-m1)*m1^(i-1)+(1-a)*exp(-m2)*m2^(i-1))
+    }
+    b
+  }
+  for(j in 1:(100*n)){
+    y <- x*t(a,mu1,mu2)
+    z <- x-y
+    a <- sum(y)/sum(x)
+    mu1 <- d%*%y/sum(y)
+    mu2 <- d%*%z/sum(z)
+  }
+  return(list(a=a,mu1=mu1,mu2=mu2))
+}
+```
+
+
